@@ -31,32 +31,21 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(csrf -> csrf.disable())
-            .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                // Allow public authentication route
-                .requestMatchers("/api/auth/**").permitAll()
-                // Allow public read access to showcase items
-                .requestMatchers(HttpMethod.GET, "/api/projects/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/skills/**").permitAll()
-                .requestMatchers("/uploads/**").permitAll()
-                // Allow anyone to send a contact message
-                .requestMatchers(HttpMethod.POST, "/api/contact/**").permitAll()
-                // Restrict creation and deletion to authorized token holders
-                .requestMatchers(HttpMethod.POST, "/api/projects/**").authenticated()
-                .requestMatchers(HttpMethod.DELETE, "/api/projects/**").authenticated()
-                .requestMatchers(HttpMethod.POST, "/api/skills/**").authenticated()
-                .requestMatchers(HttpMethod.DELETE, "/api/skills/**").authenticated()
-                .anyRequest().authenticated()
-            )
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    http
+        .cors(Customizer.withDefaults())
+        .csrf(csrf -> csrf.disable())
+        .authorizeHttpRequests(auth -> auth
+            // Allow the root URL and all public/auth routes
+            .requestMatchers("/", "/api/auth/**", "/api/public/**").permitAll()
+            // All other endpoints require a valid JWT token
+            .anyRequest().authenticated()
+        )
+        .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
-        return http.build();
-    }
-
+    return http.build();
+}
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
