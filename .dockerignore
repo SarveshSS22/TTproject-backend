@@ -1,0 +1,11 @@
+target/
+.git/
+.gitignore
+.mvn/
+.idea/
+.project
+.classpath
+.settings/
+HELP.md
+*.class
+*.log
