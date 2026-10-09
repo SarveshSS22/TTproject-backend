@@ -37,7 +37,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 // Allow root URL and all public/auth routes
-                .requestMatchers("/", "/api/auth/**", "/api/public/**").permitAll()
+                .requestMatchers("/", "/error","/api/auth/**", "/api/public/**").permitAll()
                 // All other endpoints require a valid JWT token
                 .anyRequest().authenticated()
             )
