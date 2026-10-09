@@ -1,0 +1,9 @@
+/target/
+/.mvn/
+/.idea/
+/.settings/
+.project
+.classpath
+*.class
+*.jar
+application-local.properties
