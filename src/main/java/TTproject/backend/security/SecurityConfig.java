@@ -1,5 +1,6 @@
 package TTproject.backend.security;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -11,6 +12,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -22,19 +24,19 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    // 1. PasswordEncoder bean required by AuthController
+    @Autowired
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // 2. AuthenticationManager bean for JWT login authentication
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
-    // 3. Security Filter Chain: permits public access, enables CORS, disables CSRF for stateless REST
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -45,29 +47,29 @@ public class SecurityConfig {
                 // Allow CORS preflight requests
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                // Allow public read access to portfolio items
+                // Public read endpoints
                 .requestMatchers(HttpMethod.GET, "/api/projects/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/skills/**").permitAll()
 
-                // Allow contact form submissions
+                // Public contact submission
                 .requestMatchers(HttpMethod.POST, "/api/contact/**").permitAll()
 
-                // Allow login/auth endpoints
+                // Public authentication/login endpoint
                 .requestMatchers("/api/auth/**").permitAll()
 
-                // Require JWT token authentication for any admin operations (create, edit, delete)
+                // Secure all other routes (requires JWT)
                 .anyRequest().authenticated()
-            );
+            )
+            // Intercept and validate JWT token before Spring checks credentials
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    // 4. CORS configuration allowing Netlify and local development environments
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // Allowed frontend domains
         config.setAllowedOriginPatterns(List.of(
             "https://ttproject0.netlify.app",
             "http://localhost:5173",
